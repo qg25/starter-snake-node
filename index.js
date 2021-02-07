@@ -17,7 +17,6 @@ var grideSize
 var grid = []
 var toClear = false
 
-
 function handleIndex(request, response) {
   var battlesnakeInfo = {
     apiversion: '1',
@@ -31,14 +30,17 @@ function handleIndex(request, response) {
 
 function handleStart(request, response) {
   var gameData = request.body
-  grideSize = gameData.board.height
+  var width = gameData.board.width
+  var height = gameData.board.height
   
-  for (var i=0; i<grideSize; i++) {
+  for (var i=0; i<width; i++) {
     grid[i] = []
-    for (var j=0; j<grideSize; j++) {
+    for (var j=0; j<height; j++) {
       grid[i][j] = 'Empty'
     }
   }
+  grideSize = grid.length
+  console.log('grideSize: ' + grideSize)
 
   console.log('START')
   response.status(200).send('ok')
@@ -91,7 +93,11 @@ function handleMove(request, response) {
 
   if (health <= grideSize) {
     console.log("HUNGRY")
-    
+    getSnakes(gameData)
+    var shortestPath = findPath(gameData.you.head)
+    console.log('Path: ' + shortestPath)
+    console.log('Path to move: ' + shortestPath[0])
+    move = shortestPath[0]
   }
   else {
     // Move to corner
@@ -151,6 +157,9 @@ function handleMove(request, response) {
             else if (falseUp === false) {
               move = 'up'
             }
+            else {
+              move = 'left'
+            }
           }
           else {
             if (falseLeft === false) {
@@ -162,15 +171,13 @@ function handleMove(request, response) {
             else if (falseDown === false) {
               move = 'down'
             }
+            else {
+              move = 'right'
+            }
           }
           console.log('X != Y ' + move)
         }
       }
-      // else {
-      //   var possibleMoves = ['up', 'right', 'down', 'left']
-      //   move = possibleMoves[gameData.turn % 4]
-      //   console.log('Mod 4: ' + move)
-      // }
       console.log('Else: ' + move)
     }
   }
@@ -179,16 +186,18 @@ function handleMove(request, response) {
     move: move
   })
   console.log('HP: ' + health + ' Size: ' + grideSize)
+  if (toClear === true) {
+    console.log('Called clear')
+    clearGrid()
+    toClear = false
+  }
+
   if (health - 1 <= grideSize && toClear !== true) {
     console.log("Get Food")
     getFood(gameData)
     toClear = true
   }
-  else if (toClear === true) {
-    console.log('call clear')
-    clearGrid()
-    toClear = false
-  }
+  console.log('Not Called\n')
 }
 
 function handleEnd(request, response) {
@@ -218,4 +227,134 @@ function clearGrid() {
     }
   }
   // console.log('\n\nClear Food:\n' + grid + '\n\n')
+}
+
+function getSnakes(gameData) {
+  var x
+  var y
+  for(i in gameData.board.snakes) {
+    for(j in gameData.board.snakes[i].body) {
+      x = gameData.board.snakes[i].body[j].x
+      y = gameData.board.snakes[i].body[j].y
+      // console.log('\nX:' + x + ' Y: ' + y + '\n')
+      grid[x][y] = 'Snake'
+    }
+  }
+  x = gameData.you.head.x
+  y = gameData.you.head.y
+  grid[x][y] = 'Start'
+  // console.log('\nSnake:\n' + grid + '\n\n')
+}
+
+function findPath(head) {
+  var startX = head.x
+  var startY = head.y
+
+  var location = {
+    startX: startX,
+    startY: startY,
+    path: [],
+    status: 'Start'
+  }
+
+  var queue = [location]
+
+  while (queue.length > 0) {
+    //Remove first location
+    var currentLocation = queue.shift()
+
+    //Explore Top Area
+    var newLocation = exploreDirection(currentLocation, 'up')
+    if (newLocation.status === 'Food') {
+      return newLocation.path
+    }
+    else if (newLocation.status === 'Valid') {
+      queue.push(newLocation)
+    }
+
+    //Explore Bottom Area
+    var newLocation = exploreDirection(currentLocation, 'down')
+    if (newLocation.status === 'Food') {
+      return newLocation.path
+    }
+    else if (newLocation.status === 'Valid') {
+      queue.push(newLocation)
+    }
+
+    //Explore Left Area
+    var newLocation = exploreDirection(currentLocation, 'left')
+    if (newLocation.status === 'Food') {
+      return newLocation.path
+    }
+    else if (newLocation.status === 'Valid') {
+      queue.push(newLocation)
+    }
+
+    //Explore Right Area
+    var newLocation = exploreDirection(currentLocation, 'right')
+    if (newLocation.status === 'Food') {
+      return newLocation.path
+    }
+    else if (newLocation.status === 'Valid') {
+      queue.push(newLocation)
+    }
+  }
+
+  // No valid path
+  return false
+}
+
+function locationStatus(location) {
+  var x = location.startX
+  var y = location.startY
+
+  if (location.startX < 0 || location.startX >= grideSize ||
+        location.startY < 0 || location.startY >= grideSize) {
+          return 'Invalid'
+        }
+  else if (grid[x][y] === 'Food') {
+    return 'Food'
+  }
+  else if (grid[x][y] !== 'Empty') {
+    return 'Blocked'
+  }
+  else {
+    return 'Valid'
+  }
+}
+
+function exploreDirection(currentLocation, direction) {
+  var newPath = currentLocation.path.slice()
+  newPath.push(direction)
+
+  var x = currentLocation.startX
+  var y = currentLocation.startY
+
+  if (direction === 'up') {
+    y += 1
+  }
+  else if (direction === 'down') {
+    y -= 1
+  }
+  else if (direction === 'left') {
+    x -= 1
+  }
+  else if (direction === 'right') {
+    x += 1
+  }
+
+  var newLocation = {
+    startX: x,
+    startY: y,
+    path: newPath,
+    status: 'Unknown'
+  }
+
+  newLocation.status = locationStatus(newLocation)
+
+  if (newLocation.status === 'Valid') {
+    grid[newLocation.startX][newLocation.startY] = 'Visited'
+  }
+
+  return newLocation
 }
