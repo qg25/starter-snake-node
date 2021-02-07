@@ -101,6 +101,7 @@ function handleMove(request, response) {
     console.log('Path: ' + shortestPath)
     console.log('Path to move: ' + shortestPath[0])
     
+    console.log('IF: ' + shortestPath[0] === 'false')
     if (shortestPath[0] === 'false') {
       if (falseUp === false) {
         move = 'up'
@@ -317,7 +318,7 @@ function findPath(head) {
   }
 
   // No valid path
-  return false
+  return 'false'
 }
 
 function locationStatus(location) {
