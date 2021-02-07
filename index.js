@@ -73,18 +73,30 @@ function handleMove(request, response) {
     if (gameData.you.head.y + 1 === gameData.you.body[i].y && 
           gameData.you.head.x === gameData.you.body[i].x) {
       falseUp = true
+      if (gameData.you.head.y + 1 === tailY && gameData.you.head.x === tailX) {
+        falseUp = false
+      }
     }
     if (gameData.you.head.x + 1 === gameData.you.body[i].x &&
           gameData.you.head.y === gameData.you.body[i].y) {
       falseRight = true
+      if (gameData.you.head.x + 1 === tailX && gameData.you.head.y === tailY) {
+        falseRight = false
+      }
     }
     if (gameData.you.head.y - 1 === gameData.you.body[i].y &&
           gameData.you.head.x === gameData.you.body[i].x) {
       falseDown = true
+      if (gameData.you.head.y - 1 === tailY && gameData.you.head.x === tailX) {
+        falseDown = false
+      }
     }
     if (gameData.you.head.x - 1 === gameData.you.body[i].x &&
           gameData.you.head.y === gameData.you.body[i].y) {
       falseLeft = true
+      if (gameData.you.head.x - 1 === tailX && gameData.you.head.y === tailY) {
+        falseLeft = false
+      }
     }
   }
 
@@ -93,7 +105,7 @@ function handleMove(request, response) {
   console.log('falseDown: ' + falseDown)
   console.log('falseLeft: ' + falseLeft + '\n')
 
-  if (health <= grideSize) {
+  if (health <= (grideSize || gameData.you.body.length)) {
     console.log("HUNGRY")
     getSnakes(gameData)
     grid[tailX][tailY] = 'Empty'
@@ -102,7 +114,7 @@ function handleMove(request, response) {
     console.log('Path to move: ' + shortestPath[0])
     
     console.log('IF: ' + shortestPath[0] === 'false')
-    if (shortestPath[0] === 'false') {
+    if (shortestPath === 'false') {
       if (falseUp === false) {
         move = 'up'
       }
