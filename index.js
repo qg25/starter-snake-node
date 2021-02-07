@@ -57,6 +57,8 @@ function handleMove(request, response) {
   var falseLeft = false
   var midY = Math.floor(gameData.board.height / 2)
   var midX = Math.floor(gameData.board.width / 2)
+  var tailX = gameData.you.body[gameData.you.body.length - 1].x
+  var tailY = gameData.you.body[gameData.you.body.length - 1].y
 
   // console.log('Mid: ' + midX + ' , ' + midY)
 
@@ -94,10 +96,28 @@ function handleMove(request, response) {
   if (health <= grideSize) {
     console.log("HUNGRY")
     getSnakes(gameData)
+    grid[tailX][tailY] = 'Empty'
     var shortestPath = findPath(gameData.you.head)
     console.log('Path: ' + shortestPath)
     console.log('Path to move: ' + shortestPath[0])
-    move = shortestPath[0]
+    
+    if (shortestPath[0] === 'false') {
+      if (falseUp === false) {
+        move = 'up'
+      }
+      else if (falseRight === false) {
+        move = 'right'
+      }
+      else if (falseDown === false) {
+        move = 'down'
+      }
+      else {
+        move = 'left'
+      }
+    }
+    else {
+      move = shortestPath[0]
+    }
   }
   else {
     // Move to corner
@@ -128,21 +148,17 @@ function handleMove(request, response) {
       }
       else {
         if (gameData.you.head.x === gameData.you.head.y) {
-          if (gameData.you.head.x !== 0) {
-            if (falseDown === false) {
-              move = 'down'
-            }
-            else if (falseLeft === false) {
-              move = 'left'
-            }
+          if (falseDown === false) {
+            move = 'down'
           }
-          else {
-            if (falseUp === false) {
+          else if (falseLeft === false) {
+            move = 'left'
+          }
+          else if (falseUp === false) {
               move = 'up'
-            }
-            else if (falseRight === false) {
-              move = 'right'
-            }
+          }
+          else if (falseRight === false) {
+            move = 'right'
           }
           console.log('X == Y ' + move)
         }
@@ -185,7 +201,7 @@ function handleMove(request, response) {
   response.status(200).send({
     move: move
   })
-  console.log('HP: ' + health + ' Size: ' + grideSize)
+  console.log('HP: ' + health + ' Size: ' + gameData.you.body.length + ' Turn: ' + gameData.turn)
   if (toClear === true) {
     console.log('Called clear')
     clearGrid()
